@@ -38,6 +38,7 @@ def accept_popup(driver):
         time.sleep(2)  # Attendre que le popup disparaisse
     except Exception:
         print("Popup de consentement non trouvé ou déjà fermé.")
+    return None
 
 # Fonction pour accepter le popup de consentement d'une manière générale
 def accept_popup_general(driver, css_selector):
@@ -55,6 +56,7 @@ def accept_popup_general(driver, css_selector):
         time.sleep(2)  # Attendre que le popup disparaisse
     except Exception:
         print("Popup de consentement non trouvé ou déjà fermé.")
+    return None
 
 # Fonction pour extraire les liens de la page courante
 def get_link_annonces_scroll(driver):
