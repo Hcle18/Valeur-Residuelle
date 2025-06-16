@@ -7,6 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime
 import pandas as pd
 import time
+import constants as c
 
 # Fonction pour initialiser le driver Selenium
 def init_driver():
@@ -193,35 +194,35 @@ if __name__ == "__main__":
     print("Script lancé")
 
     # Paramètres pour la fonction de scraping
-    base_url = "https://www.autohero.com/fr"
-    year_min = 2017
-    km_max = 100000
-    csv_path = "../data/raw_data/autohero_scraping.csv"
+    # base_url = "https://www.autohero.com/fr"
+    # year_min = 2017
+    # km_max = 100000
+    # csv_path = "../data/raw_data/autohero_scraping.csv"
 
     # Dictionnaire des sélecteurs CSS pour extraire les informations
-    dict_data = {
-        "modele" : ".desktopTitleContainer___2In8q span",
-        "finition" : ".desktopLayout___3j5kK span.subtitleText___2wcYx",
-        "prix" : "p.vehiclePrice___1uUmJ",
-        "annee_mise_en_circulation" : "[data-qa-selector= 'motor-info-title-builtYear']",
-        "kilometrage" : "[data-qa-selector= 'motor-info-title-mileage']",
-        "carburant" : "[data-qa-selector= 'motor-info-title-undefined']",
-        "transmission" : "[data-qa-selector= 'motor-info-title-gearType']",
-        "puissance" : "[data-qa-selector= 'motor-info-title-power']",
-        "nb_ancien_proprietaire" : "[data-qa-selector= 'motor-info-title-carPreownerCount']",
-        "classe_vehicule" : "[data-qa-selector= 'feature-section-item-bodyType-body']",
-        "nb_porte" : "[data-qa-selector= 'feature-section-item-doorCount-body']",
-        "nb_place" : "[data-qa-selector= 'feature-section-item-seatCount-body']",
-        "couleur" : "[data-qa-selector= 'feature-section-item-color-body']",
-        "sellerie" : "[data-qa-selector= 'feature-section-item-upholstery-body']",
-        "classe_emission" : "[data-qa-selector= 'feature-section-item-emissionStandard-body']",
-        "emission_CO2" : "[data-qa-selector= 'feature-section-item-co2-body']",
-        "crit_air" : "[data-qa-selector= 'feature-section-item-emissionSticker-body']",
-        "usage_commerciale_anterieure" : "[data-qa-selector= 'feature-section-item-wasInCommercialUse-body']",
-    }
+    # dict_data = {
+    #     "modele" : ".desktopTitleContainer___2In8q span",
+    #     "finition" : ".desktopLayout___3j5kK span.subtitleText___2wcYx",
+    #     "prix" : "p.vehiclePrice___1uUmJ",
+    #     "annee_mise_en_circulation" : "[data-qa-selector= 'motor-info-title-builtYear']",
+    #     "kilometrage" : "[data-qa-selector= 'motor-info-title-mileage']",
+    #     "carburant" : "[data-qa-selector= 'motor-info-title-undefined']",
+    #     "transmission" : "[data-qa-selector= 'motor-info-title-gearType']",
+    #     "puissance" : "[data-qa-selector= 'motor-info-title-power']",
+    #     "nb_ancien_proprietaire" : "[data-qa-selector= 'motor-info-title-carPreownerCount']",
+    #     "classe_vehicule" : "[data-qa-selector= 'feature-section-item-bodyType-body']",
+    #     "nb_porte" : "[data-qa-selector= 'feature-section-item-doorCount-body']",
+    #     "nb_place" : "[data-qa-selector= 'feature-section-item-seatCount-body']",
+    #     "couleur" : "[data-qa-selector= 'feature-section-item-color-body']",
+    #     "sellerie" : "[data-qa-selector= 'feature-section-item-upholstery-body']",
+    #     "classe_emission" : "[data-qa-selector= 'feature-section-item-emissionStandard-body']",
+    #     "emission_CO2" : "[data-qa-selector= 'feature-section-item-co2-body']",
+    #     "crit_air" : "[data-qa-selector= 'feature-section-item-emissionSticker-body']",
+    #     "usage_commerciale_anterieure" : "[data-qa-selector= 'feature-section-item-wasInCommercialUse-body']",
+    # }
 
     # Lancer le scraping
     try:
-        df = scraping_autohero(base_url, year_min, km_max, csv_path, dict_data)
+        df = scraping_autohero(c.BASE_URL, c.YEAR_MIN, c.KM_MAX, c.CSV_PATH, c.DICT_DATA)
     except KeyboardInterrupt:
         print("Scraping interrompu par l'utilisateur.")

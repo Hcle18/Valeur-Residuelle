@@ -1,0 +1,51 @@
+marque,modele,annee,nb_occurrences
+Jeep,Jeep Compass,2022,2
+Jeep,Jeep Renegade,2018,3
+Jeep,Jeep Renegade,2020,3
+Jeep,Jeep Renegade,2021,3
+Kia,Kia Niro,2019,2
+Kia,Kia Niro,2020,3
+Kia,Kia Niro,2022,2
+Kia,Kia Picanto,2017,1
+Kia,Kia Picanto,2018,3
+Kia,Kia Picanto,2019,1
+Kia,Kia Picanto,2020,2
+Kia,Kia Picanto,2021,2
+Kia,Kia Picanto,2022,3
+Kia,Kia Picanto,2023,1
+Kia,Kia Rio,2020,1
+Kia,Kia Rio,2021,5
+Kia,Kia Rio,2022,1
+Kia,Kia Rio,2023,1
+Kia,Kia Sportage,2018,2
+Kia,Kia Sportage,2019,1
+Kia,Kia Sportage,2020,2
+Kia,Kia Sportage,2021,3
+Kia,Kia Sportage,2022,2
+Kia,Kia Stonic,2017,1
+Kia,Kia Stonic,2018,3
+Kia,Kia Stonic,2020,2
+Kia,Kia Stonic,2021,2
+Kia,Kia XCeed,2019,1
+Kia,Kia XCeed,2020,3
+Kia,Kia XCeed,2021,1
+Kia,Kia XCeed,2022,3
+Kia,Kia cee'd,2018,1
+Kia,Kia cee'd,2019,1
+Kia,Kia cee'd,2021,3
+Kia,Kia cee'd,2022,4
+Kia,Kia cee'd,2023,1
+Kia,Kia pro_cee'd,2017,1
+Kia,Kia pro_cee'd,2019,2
+Kia,Kia pro_cee'd,2020,1
+Kia,Kia pro_cee'd,2021,1
+Land Rover,Land Rover Evoque,2017,1
+Land Rover,Land Rover Evoque,2018,1
+Land Rover,Land Rover Evoque,2020,1
+Lexus,Lexus CT-Serie,2020,1
+Lexus,Lexus NX-Serie,2018,1
+Lexus,Lexus NX-Serie,2019,1
+Lexus,Lexus NX-Serie,2021,1
+Lexus,Lexus UX-Serie,2019,2
+Lexus,Lexus UX-Serie,2020,1
+Lexus,Lexus UX-Serie,2021,1

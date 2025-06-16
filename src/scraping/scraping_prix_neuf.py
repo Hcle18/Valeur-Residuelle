@@ -12,7 +12,8 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime
-import sys
+from pandas import DataFrame
+import constants as c
 import os
 import glob
 
@@ -92,15 +93,18 @@ class DataLoader:
             if self.dict_model_corrections is not None:
                 self.data['modele'] = self.data["modele"].replace(self.dict_model_corrections)
 
+            # Création d'une colonne modèle & année
+            self.data['modele_annee'] = self.data['modele']+ ' ' + self.data['annee'].astype(str)
+
             # Nombre d'occurence par marque, modèle et année
-            self.data = self.data[['marque', 'modele', 'annee']].value_counts().reset_index(name="nb_occurences")
+            self.data = self.data[['marque', 'modele', 'annee', 'modele_annee']].value_counts().reset_index(name="nb_occurences")
             self.data.reset_index(drop=True, inplace=True)
             return self.data
         
 class WebScraperPrixNeufSetup:
     """ Classe pour créer l'environnement de web-scraping """
     def __init__(self, wait_time=10, headless = True):
-        self.base_url = "https://www.caradisiac.com/fiches-techniques"
+        self.base_url = c.BASE_URL_PRIX_NEUF
         self.wait_time = wait_time
         self.headless = headless
         self.text_processor = TextPreprocessor()
@@ -188,7 +192,7 @@ class WebScraperPrixNeufSetup:
                         df['url'] = self.driver.current_url
                         df['option_marque_select'] = option_marque
                         df['option_modele_select'] = option_modele
-                        df['option_annee_select'] = option_annee
+                        df['option_year_select'] = option_annee
                         df['match_type_marque'] = match_type_marque
                         df['match_type_modele'] = match_type_modele
                         df['match_type_annee'] = match_type_annee
@@ -285,16 +289,20 @@ class WebScraperPrixNeufRunner:
         df = self.data_loader.load_data()
 
         # Diviser le DataFrame en lots
-        self.split_into_batches(df, nb_batch, batch_pattern)
+        #self.split_into_batches(df, nb_batch, batch_pattern)
 
         # Traiter chaque lot
+        print(f"Number of models & years to be collected: {len(pd.unique(df["modele_annee"]))} \n")
         files = glob.glob(os.path.join(self.output_dir, f'{batch_pattern}_*.csv'))
         collects = []
         uncollects = []
+        df_collected = pd.DataFrame()
+        print(f"---Web Scraping by batch---\n")
         for i, path_split in enumerate(files):
-            collect, uncollect = self.process_batch(path_split, i+1, out_pattern)
+            collect, uncollect, df_batch = self.process_batch(path_split, i+1, out_pattern)
             if collect:
                 collects.extend(collect)
+                df_collected = pd.concat([df_collected, df_batch], ignore_index = True)
             if uncollect:
                 uncollects.extend(uncollect) 
 
@@ -302,11 +310,13 @@ class WebScraperPrixNeufRunner:
         print(f"\n 📊 Scraping completed:")
         print(f"✅ Total models & years collected: {len(collects)}")
         print(collects)
-        print(f"⚠️ Total models & years remaining: {len(uncollects)}")
+        print(f"⚠️ Total models & years remaining for collection: {len(uncollects)}")
         print(uncollects)
+        df_ko = df[df['modele_annee'].isin(uncollects)]
+        print(df_ko.groupby('modele_annee')['nb_occurences'].sum().reset_index().sort_values('nb_occurences', ascending = False))
 
         # Liste des non collectés
-        return collects, uncollects
+        return collects, uncollects, df_collected
 
     def split_into_batches(self, df, nb_batch, batch_pattern):
         """ Diviser le DataFrame en lots de taille batch_size et les enregistrer dans des fichiers CSV
@@ -379,8 +389,10 @@ class WebScraperPrixNeufRunner:
 
         print(f"\n 🆗 Scraping completed for batch {batch_num}. Total entries collected: {len(price_data_batch)}")
         print(f"Total models & years to be collected for batch {batch_num}: {len(unique_modele_annee)}")
+
         # Print le nombre de couple modèles & années trouvés, sans doublons
         if not price_data_batch.empty:
+            
             #nb_found = len(price_data_batch[['source_model', 'source_year']].drop_duplicates())
             price_data_batch['modele_annee'] = price_data_batch['source_model'] + ' ' + price_data_batch['source_year'].astype(str)
             # Retreive only elements present in unique_modele_annee
@@ -392,7 +404,7 @@ class WebScraperPrixNeufRunner:
         remaining_to_collect = set(unique_modele_annee) - set(unique_modele_annee_collected)
         print(f"⚠️ Total models & years not found in batch {batch_num}: {len(remaining_to_collect)}")
 
-        return unique_modele_annee_collected, remaining_to_collect
+        return unique_modele_annee_collected, remaining_to_collect, price_data_batch
     
 class WebScraperPrixNeufRunnerFix:
     def __init__(self, data_in, output_dir, dict_model_correction = {}):
@@ -409,12 +421,11 @@ class WebScraperPrixNeufRunnerFix:
             # Charger le lot
             total_models = len(self.data_in)
             price_data_batch = pd.DataFrame()
-            nb_found = 0
+            # Create columns to keep original "marque" & "modele" name
+            self.data_in["marque_init"] = self.data_in["marque"]
+            self.data_in['modele_init'] = self.data_in['modele']
             # Corriger le nom du modèle si besoin
             if self.dict_model_correction:
-                # Create columns to keep original "marque" & "modele" name
-                self.data_in["marque_init"] = self.data_in["marque"]
-                self.data_in['modele_init'] = self.data_in['modele']
                 self.data_in['modele'] = self.data_in['modele'].replace(self.dict_model_correction)
 
             for idx, row in self.data_in.iterrows():
@@ -425,7 +436,7 @@ class WebScraperPrixNeufRunnerFix:
                     # Ajouter des colonnes pour identifier la source des données
                     price_data.insert(0, 'source_model', row['modele_init'])
                     price_data.insert(1, 'source_year', row['annee'])
-                    price_data.insert(0, 'model_alternative', row['modele'])
+                    price_data.insert(2, 'model_alternative', row['modele'])
 
                     # Concaténer les données de prix avec le DataFrame principal
                     price_data_batch = pd.concat([price_data_batch, price_data], ignore_index=True)
@@ -451,10 +462,44 @@ class WebScraperPrixNeufRunnerFix:
         remaining_to_collect = set(self.unique_modele_annee) - set(unique_modele_annee_collected)
         print(f"⚠️ Total models & years not found: {len(remaining_to_collect)}")
         print(remaining_to_collect)
-        return remaining_to_collect
+        df_ko = self.data_in[self.data_in['modele_annee'].isin(remaining_to_collect)]
+        print(df_ko.groupby('modele_annee')['nb_occurences'].sum().reset_index().sort_values('nb_occurences', ascending = False))
+        return remaining_to_collect, price_data_batch
 
+class FinalDataCollected:
+    def __init__(self, list_df:list[DataFrame]):
+        self.list_df = list_df
+    def combined_df(self, output_csv):
+        # Concatenate the dataframes
+        df_combined = pd.concat([df for df in self.list_df], ignore_index=True)
+        # Remove duplicates
+        df_combined_nodup = df_combined.drop_duplicates(subset=['source_model', 'source_year', 'option_marque_select', 
+                                                                'option_modele_select', 'option_year_select', 'Versions'])
+        # Remove missing price
+        df_combined_nodup = df_combined_nodup[df_combined_nodup["Prix"].notna()]
 
+        # Extract the version from the URL
+        df_combined_nodup['Version_selected'] = df_combined_nodup['url'].str.extract(r'--(.*?)/')
+        df_combined_nodup['Version_selected'] = df_combined_nodup['Version_selected'].str.replace('-', ' ', regex=False)
+
+        df_combined_nodup['option_marque_select'] = df_combined_nodup['option_marque_select'].str.upper()
+        df_combined_nodup['Versions'] = df_combined_nodup['Versions'].str.upper()
+        df_combined_nodup.drop(columns=['source_year', 'option_modele_select',
+                                        'match_type_marque', 'match_type_modele', 'match_type_year'], inplace=True)
+
+        # Exporter les données dans un fichier CSV pour l'utilisation ultérieure
+        df_combined_nodup.to_csv(output_csv, index=False, encoding='utf-8-sig')
+        print(f"Data exported successfully to {output_csv}")
+
+        # Print nombre modèle & année collectés
+        print(f"Total models & years collected: {len(pd.unique(df_combined_nodup["modele_annee"]))}")
+        return df_combined_nodup
+    
 if __name__ == "__main__":
+
+    #######################################
+    #           Chemins                   #
+    #######################################
     # Obtenir le chemin du répertoire actuel et le chemin du répertoire racine du projet
     current_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(os.path.dirname(current_dir))
@@ -467,40 +512,25 @@ if __name__ == "__main__":
     if not os.path.exists(output_prix):
         os.makedirs(output_prix)
 
+    #######################################
+    #           1. First attempt          #
+    #######################################
     collecteur = WebScraperPrixNeufRunner(
         annonce_data_path = annonce_data_path,
         output_dir = output_prix
     )
 
     # Corriger les noms de marques
-    collecteur.data_loader.dict_marque_corrections= {'Abarth' : 'Abarth', 'Alfa' : 'Alfa Romeo', 'Audi' : 'Audi', 
-                                                    'BMW' : 'BMW', 
-                                                    'Citroen' : 'Citroen', 'Cupra' : 'Cupra', 
-                                                    'DS' : 'DS', 'Dacia' : 'Dacia',
-                                                    'Fiat' : 'Fiat', 'Ford' : 'Ford', 
-                                                    'Honda' : 'Honda', 'Hyundai' : 'Hyundai', 
-                                                    'Infiniti' : 'Infiniti', 
-                                                    'Jaguar' : 'Jaguar', 'Jeep' : 'Jeep',
-                                                    'Kia' : 'Kia', 
-                                                    'Land' : 'Land Rover', 'Lexus' : 'Lexus', 
-                                                    'MG' : "MG", 'MINI' : 'MINI', 'Mazda' : 'Mazda', 'Mercedes-Benz' : 'Mercedes', 'Mitsubishi' : 'Mitsubishi', 
-                                                    'Nissan' : 'Nissan', 
-                                                    'Opel' : 'Opel', 
-                                                    'Peugeot' : 'Peugeot', 
-                                                    'Renault' : 'Renault', 
-                                                    'Seat' : 'Seat', 'Skoda' : 'Skoda', 'Smart' : 'Smart', 'Suzuki' : 'Suzuki', 
-                                                    'Toyota' : 'Toyota', 
-                                                    'Volkswagen' : 'Volkswagen', 'Volvo' : 'Volvo'
-                                                    }   
-    
-    #1. First attempt
-    collected_1, uncollected_1 = collecteur.run_collection(
+    collecteur.data_loader.dict_marque_corrections= c.DICT_MARQUE
+    collected_1, uncollected_1, df_prix_neuf_1 = collecteur.run_collection(
         batch_pattern = "split_car_models",
         out_pattern = "prix_neuf_voitures_pack",
         nb_batch = 16
     )
 
-    # 2. Second attempt, augmenter le wait time
+    ##############################################
+    #               2. Second attempt            #
+    ##############################################
     # Dataframe des modèles restant à collecter
     df = collecteur.data_loader.load_data()
     df['modele_annee'] = df['modele'] + ' ' + df['annee'].astype(str)
@@ -514,15 +544,19 @@ if __name__ == "__main__":
     # Augmenter wait time à 20 secondes
     collecteur_2.scraper.wait_time = 20
     # Lancer le deuxième essai
-    uncollected_2 = collecteur_2.run_collection_fix(
+    uncollected_2, df_prix_neuf_2 = collecteur_2.run_collection_fix(
         pattern_out = "prix_neuf_voitures_essaie_2",
     )
 
-    # 3. Third attempt, modifier le nom du modèle pour que ce soit cohérent avec celui utilisé par le site caradisiac 
+    ##############################################
+    #             3. Third attempt               #
+    ##############################################
+    # Dataframe des modèles restant à collecter
     df3 = df2[df2['modele_annee'].isin(uncollected_2)].reset_index(drop=True)
     # Liste des modèles (sans année)
     list_modele_df3 = pd.unique(df3['modele'])
     print(f"Liste des modèles à collecter (sans année): {list_modele_df3}")
+    # modifier le nom du modèle pour que ce soit cohérent avec celui utilisé par le site caradisiac 
     dict_model_corr = {
     'Abarth 595' : '500',
     'Abarth 595C' : '500',
@@ -552,11 +586,14 @@ if __name__ == "__main__":
     # Augmenter wait time à 20 secondes
     collecteur_3.scraper.wait_time = 20
     # Lancer le 3è essai
-    uncollected_3 = collecteur_3.run_collection_fix(
+    uncollected_3, df_prix_neuf_3 = collecteur_3.run_collection_fix(
         pattern_out = "prix_neuf_voitures_essaie_3",
     )
 
-    # 4th attempt
+    ##############################################
+    #             4. Fourth attempt              #
+    ##############################################
+    # Dataframe des modèles restant à collecter
     df4 =  df2[df2['modele_annee'].isin(uncollected_3)].reset_index(drop=True)
     collecteur_4 = WebScraperPrixNeufRunnerFix(
         data_in = df4,
@@ -566,6 +603,13 @@ if __name__ == "__main__":
     # Augmenter wait time à 20 secondes
     collecteur_4.scraper.wait_time = 20
     # Lancer le 4è essai
-    uncollected_4 = collecteur_4.run_collection_fix(
+    uncollected_4, df_prix_neuf_4 = collecteur_4.run_collection_fix(
         pattern_out = "prix_neuf_voitures_essaie_4",
     )
+
+    ##############################################
+    #              Combiner les résultats        #
+    ##############################################
+    output_data_final = os.path.join(project_root, "data", "scraping_prix_neuf", "prix_neuf_voitures_vf.csv")
+    collecteur_all = FinalDataCollected(list_df=[df_prix_neuf_1, df_prix_neuf_2, df_prix_neuf_3, df_prix_neuf_4])
+    df_combined = collecteur_all.combined_df(output_data_final)

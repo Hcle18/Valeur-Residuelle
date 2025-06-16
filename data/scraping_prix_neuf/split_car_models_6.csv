@@ -1,0 +1,51 @@
+marque,modele,annee,nb_occurrences
+Ford,Ford Tourneo Connect,2019,2
+Ford,Ford Transit Custom,2020,2
+Honda,Honda Civic,2017,2
+Honda,Honda Civic,2019,1
+Honda,Honda Civic,2020,4
+Honda,Honda HR-V,2018,1
+Honda,Honda HR-V,2020,1
+Honda,Honda HR-V,2021,1
+Honda,Honda HR-V,2022,1
+Honda,Honda Jazz,2019,1
+Hyundai,Hyundai Kona,2017,1
+Hyundai,Hyundai Kona,2018,1
+Hyundai,Hyundai Kona,2019,4
+Hyundai,Hyundai Kona,2020,4
+Hyundai,Hyundai Kona,2021,2
+Hyundai,Hyundai Kona,2022,2
+Hyundai,Hyundai Kona,2023,2
+Hyundai,Hyundai Santa Fe,2021,1
+Hyundai,Hyundai Santa Fe,2022,1
+Hyundai,Hyundai Tucson,2017,3
+Hyundai,Hyundai Tucson,2018,2
+Hyundai,Hyundai Tucson,2019,4
+Hyundai,Hyundai Tucson,2020,3
+Hyundai,Hyundai Tucson,2021,2
+Hyundai,Hyundai Tucson,2022,5
+Hyundai,Hyundai Tucson,2023,1
+Hyundai,Hyundai Tucson,2024,1
+Hyundai,Hyundai i10,2017,1
+Hyundai,Hyundai i10,2019,2
+Hyundai,Hyundai i10,2021,1
+Hyundai,Hyundai i10,2023,1
+Hyundai,Hyundai i20,2018,5
+Hyundai,Hyundai i20,2019,4
+Hyundai,Hyundai i20,2020,4
+Hyundai,Hyundai i20,2022,2
+Hyundai,Hyundai i20,2024,1
+Hyundai,Hyundai i30,2017,1
+Hyundai,Hyundai i30,2019,1
+Hyundai,Hyundai i30,2021,1
+Hyundai,Hyundai i30 Fastback,2018,4
+Hyundai,Hyundai i30 Fastback,2019,1
+Infiniti,Infiniti Q30,2017,1
+Infiniti,Infiniti QX30,2018,1
+Jaguar,Jaguar F-Pace,2018,1
+Jaguar,Jaguar F-Pace,2019,1
+Jeep,Jeep Compass,2017,1
+Jeep,Jeep Compass,2018,3
+Jeep,Jeep Compass,2019,1
+Jeep,Jeep Compass,2020,1
+Jeep,Jeep Compass,2021,2
