@@ -10,6 +10,7 @@ helping to gain insights and understand the data distribution and relationships.
 import os
 from tkinter import font
 from turtle import left
+from typing import Optional
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,6 +18,7 @@ from pyparsing import line
 import seaborn as sns
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.express as px
 import math
 sns.set_style("dark")
 
@@ -102,7 +104,7 @@ def univariate_analysis(df:pd.DataFrame, list_columns: list[str], dtype: str, ta
                     # Sauvegarder le reste des catégories dans "Autres", créer un DataFrame pour "Autres"
                     other_count = df[~df[column].isin(freq.index)].shape[0]
                     if other_count > 0:
-                        other_row = pd.DataFrame({freq.index.name: ['Autres'], 'count_freq': [other_count]})
+                        other_row = pd.DataFrame({freq.index.name: ['**Autres**'], 'count_freq': [other_count]})
                         other_row.set_index(freq.index.name, inplace=True)
                         print(other_row)
                         freq = pd.concat([freq, other_row], ignore_index=False)
@@ -126,7 +128,7 @@ def univariate_analysis(df:pd.DataFrame, list_columns: list[str], dtype: str, ta
                     other_mean = df[~df[column].isin(freq.index)][target_column].mean()
                     other_count = df[~df[column].isin(freq.index)][target_column].count()
                     if other_count > 0:
-                        other_row = pd.DataFrame({column: ['Autres'], 
+                        other_row = pd.DataFrame({column: ['**Autres**'], 
                                                 'mean_target': [other_mean], 
                                                 'count_freq': [other_count]
                                                 }
@@ -156,7 +158,7 @@ def univariate_analysis(df:pd.DataFrame, list_columns: list[str], dtype: str, ta
             # Rotation des étiquettes de l'axe x si le nom de la catégorie est long
             if (freq.index.dtype == 'object' and any(len(str(cat)) > 8 for cat in freq.index)) or len(freq.index) > 10:
                 # Rotation des étiquettes de l'axe x pour une meilleure lisibilité
-                axes[i].tick_params(axis='x', rotation=45)
+                axes[i].tick_params(axis='x', rotation=90)
 
             if len(freq) > 10:
                 # Réduire la taille des étiquettes de l'axe x s'il y a plus de 10 catégories
@@ -237,7 +239,7 @@ def bivariate_analysis(df:pd.DataFrame, list_columns: list[str], dtype: str, tar
         for i, column in enumerate(list_columns):
             sns.boxplot(data=df, x=column, y=target_column, ax=axes[i])
             # Rotation des étiquettes de l'axe x pour une meilleure lisibilité
-            axes[i].tick_params(axis='x', rotation=45)
+            axes[i].tick_params(axis='x', rotation=90)
             # Réduire la taille des étiquettes de l'axe x
             for label in axes[i].get_xticklabels():
                 label.set_fontsize(7)
@@ -258,6 +260,29 @@ def multivariate_analysis(df: pd.DataFrame, x: str, y: str, hue: str = None, col
     plt.show()
     return None
 
+def scatter_3d (df: pd.DataFrame, x: str, y: str, z: str, 
+                x_title: Optional[str] = None,
+                y_title: Optional[str] = None,
+                z_title: Optional[str] = None,
+                legend_title: Optional[str] = None,
+                color: Optional[str] = None,
+                **kwargs):
+    fig = px.scatter_3d(df, x=x, y=y, z=z,
+                        color=color, opacity=0.7)
+
+    # Ajouter des titres aux axes si fournis
+    fig.update_layout(scene= dict(
+                              xaxis_title = x_title if x_title else x,
+                              yaxis_title = y_title if y_title else y,
+                              zaxis_title = z_title if z_title else z
+                              ),
+                  legend_title_text = legend_title if legend_title else color,
+                  width = 800, height = 600,
+                  margin=dict(l=0, r=0, b=0, t=1)
+                 )
+    fig.show()
+    return None
+
 if __name__ == "__main__":
     # Charger les données prétraitées
     # Obtenir le chemin du répertoire actuel et le chemin du répertoire racine du projet
@@ -273,6 +298,6 @@ if __name__ == "__main__":
     num_vars = data.select_dtypes(include=['int64', 'float64']).columns.tolist()
 
     #univariate_analysis(data, list_columns=cat_vars, dtype="cat", target_column='ratio_vr')
-    #univariate_analysis(data, list_columns=num_vars, dtype="num")
-    bivariate_analysis(data, list_columns=num_vars, dtype="num", target_column='ratio_vr')
+    univariate_analysis(data, list_columns=num_vars, dtype="num")
+    #bivariate_analysis(data, list_columns=num_vars, dtype="num", target_column='ratio_vr')
     #bivariate_analysis(data, list_columns=cat_vars, dtype="cat", target_column='ratio_vr')

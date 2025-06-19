@@ -1,6 +1,3 @@
-#from cProfile import label
-#from math import e
-#from tkinter import Label
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,6 +11,21 @@ from sklearn.decomposition import PCA
 import os
 
 class CategoricalEmbedding:
+    """    Class to handle categorical embeddings and numerical features for a neural network model.
+    
+    This class prepares the data, creates the model architecture, and provides methods to visualize embeddings.
+    It supports embedding for categorical features, one-hot encoding for other categorical features,
+    and scaling for numerical features. The model architecture can be customized with hidden layers and dropout rates.
+    Attributes:
+        df (pd.DataFrame): Input DataFrame containing features and target.
+        embed_features (list[str]): List of categorical features to be embedded.
+        categorical_features (list[str]): List of other categorical features to be one-hot encoded.
+        numerical_features (list[str]): List of numerical features to be scaled.
+        embedding_dims (dict[str, int]): Optional dictionary specifying the embedding dimensions for each feature.
+        target_column (str): Name of the target column in the DataFrame.
+        hidden_layers (list[int]): List of integers specifying the number of units in each hidden layer.
+        dropout_rates (list[float]): List of dropout rates for each hidden layer.    
+    """
     def __init__(self, 
                df: pd.DataFrame,
                embed_features: list[str], # Cat Features to use embeddings
@@ -56,12 +68,12 @@ class CategoricalEmbedding:
             le = LabelEncoder()
             X[feature] = le.fit_transform(self.df[feature]).reshape(-1, 1)
             self.encoders[feature] = le
-            print(self.encoders[feature].classes_)
+            #print(self.encoders[feature].classes_)
         
         # process other cat features (one-hot encoding)
         for cat_feature in self.categorical_features:
             ohe = OneHotEncoder(sparse_output=False)
-            encoded = ohe.fit_transform(self.df[[cat_feature]])
+            encoded = ohe.fit_transform(self.df[[cat_feature]]) # binary arrays of shape (n_samples, n_categories)
             X[cat_feature] = encoded
             self.encoders[cat_feature] = ohe
             self.onehot_dim[cat_feature] = encoded.shape[1]
@@ -199,13 +211,13 @@ if __name__ == "__main__":
     df = pd.read_csv(data_path)
     print(df.head())
 
-    embed_features = ['modele']
+    embed_features = ['marque', 'modele']
     categorical_features = ['carburant', 'transmission', 'classe_vehicule', 'couleur']
     numerical_features = ['kilometrage', 'puissance', 'emission_CO2', 'age_months', 'prix_neuf']
     target_col = 'ratio_vr'
 
     # Optional: Custom embedding dimensions
-    embedding_dims = {'modele': 2}
+    embedding_dims = {'marque': 2, 'modele': 2}
 
     # Create model instance
     model_handler = CategoricalEmbedding(
@@ -220,6 +232,7 @@ if __name__ == "__main__":
     )
 
     X, y = model_handler.prepare_data()
+
     # Split the data into training and validation sets
     train_idx, test_idx = train_test_split(
         np.arange(len(y)), test_size=0.2, random_state=42)
