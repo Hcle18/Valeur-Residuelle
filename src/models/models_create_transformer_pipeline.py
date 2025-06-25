@@ -9,7 +9,7 @@ from typing import Optional
 def create_transformer_pipeline(categorical_features: list[str],
                     special_impute_cat_features: Optional[dict[str]] = None,
                     numerical_features: list[str] = None,
-                    special_impute_num_features: Optional[dict[str]] = None
+                    special_impute_num_features: dict[str] = None
                     ):
     """
     Create a preprocessing pipeline for categorical & numerical variables
@@ -53,11 +53,11 @@ def create_transformer_pipeline(categorical_features: list[str],
     
     # ====================== Numerical Features =================== #
     # Transformation Pipeline for special imputation numerical features
-    for num_feature, strat in special_impute_num_features.items():
+    for num_feature, value in special_impute_num_features.items():
         if num_feature not in numerical_features:
             pipelines_num[num_feature] = Pipeline(
                 [
-                    ('imputer', SimpleImputer(strategy=strat)),
+                    ('imputer', SimpleImputer(strategy='constant', fill_value=value)),
                     ('std_scaler', StandardScaler())
                 ]
             )
@@ -70,7 +70,6 @@ def create_transformer_pipeline(categorical_features: list[str],
                 ('std_scaler', StandardScaler())
             ]
         )
-
 
     # Create transformers list for ColumnTransformer
     transformers = []

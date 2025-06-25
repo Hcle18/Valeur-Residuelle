@@ -8,6 +8,7 @@ from sklearn.preprocessing import OneHotEncoder, LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
 import os
 
 class CategoricalEmbedding:
@@ -99,7 +100,7 @@ class CategoricalEmbedding:
 
         # Create embedding layers
         for feature in self.embed_features:
-            inp = keras.layers.Input(shape=(1,), name = '_input_' + '_'.join(feature.split(' ')))
+            inp = keras.layers.Input(shape=(1,), name = feature)
             inputs[feature] = inp
             embedding = keras.layers.Embedding(
                 input_dim = len(self.encoders[feature].classes_),
@@ -111,13 +112,13 @@ class CategoricalEmbedding:
 
         # Create other categorical inputs (no embedding)
         for cat_feature in self.categorical_features:
-            inp = keras.layers.Input(shape=(self.onehot_dim[cat_feature],), name='_input_' + '_'.join(cat_feature.split(' ')))
+            inp = keras.layers.Input(shape=(self.onehot_dim[cat_feature],), name=cat_feature)
             inputs[cat_feature] = inp
             features.append(inp)
 
         # Create numerical input
         num_inp = keras.layers.Input(shape=(len(self.numerical_features),),
-                                     name = 'input_num_features')
+                                     name = 'numerical_features')
         inputs['numerical_features'] = num_inp
         features.append(num_inp)
 
@@ -141,15 +142,15 @@ def plot_embeddings(model, feature_name, encoder, method='tsne'):
     # Get embedding weights
     embedding_layer = model.get_layer(f"{feature_name}_embedding")
     embeddings = embedding_layer.get_weights()[0]
-    # Create a DataFrame for embeddings
-    embeddings_df = pd.DataFrame(embeddings)
-    # Add labels
-    labels = encoder.classes_
-    # Set the index to the labels
-    embeddings_df.index = labels
-    # Add prefix to columns
-    embeddings_df = embeddings_df.add_prefix(feature_name + '_')
-    print(embeddings_df)
+    # # Create a DataFrame for embeddings
+    # embeddings_df = pd.DataFrame(embeddings)
+    # # Add labels
+    # labels = encoder.classes_
+    # # Set the index to the labels
+    # embeddings_df.index = labels
+    # # Add prefix to columns
+    # embeddings_df = embeddings_df.add_prefix(feature_name + '_')
+    # print(embeddings_df)
 
     # Reduce dimensionality to 2D
     if method == 'tsne':
@@ -162,7 +163,9 @@ def plot_embeddings(model, feature_name, encoder, method='tsne'):
     # Create plot
     plt.figure(figsize=(12,8))
     plt.scatter(embeddings_2d[:, 0], embeddings_2d[:, 1])
-
+    # Ajouter la droite 0, 0
+    plt.axhline(0, color='white', lw=0.5, ls='--')
+    plt.axvline(0, color='white', lw=0.5, ls='--')
     # Add labels
     for i, label in enumerate(encoder.classes_):
         plt.annotate(
@@ -200,6 +203,63 @@ def visualize_all_embeddings(model_handler, model):
             model_handler.encoders[feature], 
             method='pca'
         )
+        
+# Get embedding weights
+def get_embedding_weights(model, encoder, feature_name):
+    """
+    Get the embedding weights for a specific feature from the model.
+    
+    Args:
+        model: The trained model.
+        encoder: The Encoder used for the feature.
+        feature_name: The name of the feature for which to get the embeddings.
+    
+    Returns:
+        A DataFrame containing the embeddings for the specified feature.
+    """
+    embedding_layer = model.get_layer(f"{feature_name}_embedding")
+    embeddings = embedding_layer.get_weights()[0]
+
+    # Create a DataFrame for embeddings
+    embeddings_df = pd.DataFrame(embeddings)
+    # Add labels
+    labels = encoder.classes_
+    # Set the index to the labels
+    embeddings_df.index = labels
+    # Add prefix to columns
+    embeddings_df = embeddings_df.add_prefix(feature_name + '_')
+    #print(embeddings_df)
+
+    return embeddings_df
+
+# Regrouper en classes en se basant sur les embeddings (K-means)
+def cluster_embeddings(df_embed, col_embed,  n_clusters, list_columns: list[str]):
+    kmeans = KMeans(n_clusters = n_clusters, random_state=42)
+    kmeans.fit(df_embed[list_columns])
+    
+    df_embed_cluster = df_embed.copy()
+    df_embed_cluster['cluster_' + col_embed] = kmeans.labels_
+    # Ajouter les coordonnées des centres des clusters
+    centers = kmeans.cluster_centers_
+    centers_df = pd.DataFrame(centers, columns=list_columns)
+    # Renommer l'index pour ajouter les centres des clusters
+    centers_df.index = ['center_' + str(i) for i in range(n_clusters)]
+    centers_df['cluster_' + col_embed] = range(n_clusters)
+    df_embed_cluster = pd.concat([df_embed_cluster, centers_df], ignore_index=False)
+
+    # Ajouter un graphique pour visualiser les clusters
+    plt.figure(figsize=(10, 6))
+    sns.scatterplot(data=df_embed_cluster, x=list_columns[0], y=list_columns[1], hue='cluster_' + col_embed, palette='viridis')
+    # Ajouter les étiquettes d'Index
+    for i in range(len(df_embed_cluster)):
+        plt.text(df_embed_cluster.iloc[i][list_columns[0]], df_embed_cluster.iloc[i][list_columns[1]], 
+                 df_embed_cluster.index[i], fontsize=9, alpha=0.7)
+    plt.show()
+
+    # Reset index, mettre l'index à la colonne col_embed
+    df_embed_cluster.reset_index(inplace=True)
+    df_embed_cluster.rename(columns={'index': col_embed}, inplace=True)
+    return df_embed_cluster
 
 if __name__ == "__main__":
     # Example
