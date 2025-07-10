@@ -1,3 +1,5 @@
+import os
+import glob
 import re
 import time
 import pandas as pd
@@ -13,9 +15,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime
 from pandas import DataFrame
-import constants as c
-import os
-import glob
+# Local
+from src.scraping import constants as c
 
 
 class TextPreprocessor:

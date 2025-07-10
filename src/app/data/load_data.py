@@ -16,8 +16,9 @@ def load_data(server, csv_path, table_name='car_data'):
             
     with server.app_context():
         try:
+            #db.drop_all()
             db.create_all()
-            print('Database tables created successfully.')
+            #print('Database tables created successfully.')
 
             # load data from the CSV file into the database if the database is empty
             print(f"Number of records: {db.session.query(CarData).count()}")
@@ -49,8 +50,8 @@ def load_data(server, csv_path, table_name='car_data'):
                          usage_commerciale_anterieure=row['usage_commerciale_anterieure'],
                          annee=row['annee'],
                          prix_neuf=row['prix_neuf'],
-                         mise_en_circulation=row['Mise_en_circulation'],
-                         fin_du_contrat=row['Fin_du_contrat']
+                         mise_en_circulation=row['mise_en_circulation'],
+                         fin_du_contrat=row['fin_du_contrat']
                 ))
                 db.session.commit() 
                 print(f"Data loaded from {csv_path} into database table {table_name}.")

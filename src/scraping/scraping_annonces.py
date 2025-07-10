@@ -7,7 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime
 import pandas as pd
 import time
-import constants as c
+from src.scraping import constants as c
 
 # Fonction pour initialiser le driver Selenium
 def init_driver():

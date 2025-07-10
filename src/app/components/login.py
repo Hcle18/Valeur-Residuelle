@@ -46,7 +46,7 @@ login_info = html.Div(id="user-status-header")
 logged_in_info = html.Div(
     [
         dbc.Button(
-            html.I(className="fas fa-circle-user fa-xl"), # Font Awesome icon for user
+            html.I(className="fa-solid fa-circle-user fa-xl"), # Font Awesome icon for user
             id="user-popover",
             outline=True,
             color="light", # Button color
@@ -59,7 +59,7 @@ logged_in_info = html.Div(
                     [
                         dcc.Link(
                             [
-                                html.I(className="fas fa-arrow-right-from-bracket me-1"), # Font Awesome icon for logout
+                                html.I(className="fa-solid fa-arrow-right-from-bracket me-1"), # Font Awesome icon for logout
                                 "Logout"
                             ],
                             href="/logout"
