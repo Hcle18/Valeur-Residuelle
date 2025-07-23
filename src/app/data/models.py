@@ -1,5 +1,5 @@
 # Define the database model for db
-from .server import db
+from .create_server import db
 
 class CarData(db.Model):
     __tablename__ = 'car_data'
@@ -21,3 +21,4 @@ class CarData(db.Model):
     prix_neuf = db.Column(db.Float())
     mise_en_circulation = db.Column(db.String)
     fin_du_contrat = db.Column(db.String)
+    valeur_residuelle = db.Column(db.Float)

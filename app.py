@@ -61,14 +61,12 @@ app = Dash(__name__, server=server,
 #     return User(username)
 
 content = html.Div(
-    dbc.Spinner(
         dash.page_container,
-        delay_show = 0,
-        delay_hide=100,
-        color="primary",
-        spinner_class_name = "fixed-top",
-        spinner_style={"margin-top": "100px"},
-    ),
+        # delay_show = 0,
+        # delay_hide=100,
+        # color="primary",
+        # spinner_class_name = "fixed-top",
+        # spinner_style={"margin-top": "100px"},
     className="content",
 )
 
