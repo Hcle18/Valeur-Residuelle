@@ -1,10 +1,12 @@
 import dash
 from dash import html, dcc, callback, Input, Output
 import dash_bootstrap_components as dbc
+from sqlalchemy import text, func
 
 # Local import
 from src.app.data import db, CarData
 from src.app.utils.title import TITLE
+
 
 PAGE_TITLE = "Accueil"
 
@@ -23,6 +25,24 @@ def get_car_count():
         return db.session.query(CarData).count()
     except Exception as e:
         print(f"Error getting car count: {e}")
+        return 0
+
+def get_prix_initial():
+    """Get the total of initial prices """
+    try:
+        query = 'SELECT SUM(prix_neuf) FROM car_data'
+        return db.session.execute(text(query)).scalar()
+    except Exception as e:
+        print(f"Error getting initial price: {e}")
+        return 0
+
+def get_valeur_residuelle():
+    """Get the total of residual values """
+    try:
+        query = 'SELECT SUM(valeur_residuelle) FROM car_data'
+        return db.session.execute(text(query)).scalar()
+    except Exception as e:
+        print(f"Error getting residual value: {e}")
         return 0
 
 
@@ -66,14 +86,14 @@ def layout():
                                 html.Div([
                                     html.H2(
                                         html.Span([
-                                            html.I(className="fas fa-piggy-bank text-success mr-3"),
+                                            html.I(className="fas fa-euro-sign text-success mr-3"),
                                             "€ 2.5M"
                                             ]),
-                                        id="card-vr-init",
+                                        id="card-prix-init",
                                         className="text-success mb-0"
                                         ),
-                                    html.P("Valeur Résiduelle Totale", className="text-muted mb-0"),
-                                    html.Small("Estimation initiale", className="text-muted")
+                                    html.P("Valeur Initiale", className="text-muted mb-0"),
+                                    html.Small("Coût d'achat initial", className="text-muted")
                                 ])
                             ])
                         ], className="border-0 shadow-sm")
@@ -86,15 +106,15 @@ def layout():
                                 html.Div([
                                     html.H2(
                                         html.Span([
-                                            html.I(className="fas fa-chart-area text-info mr-3"),
+                                            html.I(className="fas fa-chart-line text-info mr-3"),
                                             "€ 2.5M"
                                             ]),
-                                        id="card-vr-reforecast",
+                                        id="card-vr-init",
                                         className="text-info mb-0"
                                         ),
 
                                     html.P("Valeur Résiduelle Totale", className="text-muted mb-0"),
-                                    html.Small("Estimation reforecast", className="text-muted")
+                                    html.Small("Estimation initiale", className="text-muted")
                                 ])
                             ])
                         ], className="border-0 shadow-sm")
@@ -150,13 +170,30 @@ def layout():
 
 # Callback to update car count
 @callback(
-    Output("car-count-display", "children"),
+    [Output("car-count-display", "children"),
+     Output("card-prix-init", "children"),
+     Output("card-vr-init", "children")],
     [Input("refresh-btn", "n_clicks")],
     prevent_initial_call=False
 )
-def update_car_count(n_clicks):
+def update_card_homepage(n_clicks):
     count = get_car_count()
-    return html.Span([
+    prix_init = get_prix_initial()
+    vr_init = get_valeur_residuelle()
+    return [
+        # Car count
+        html.Span([
         html.I(className="fas fa-car mr-3"),
-        f"{count:,}"
+        f"{count:,}".replace(',', ' '),  # Format with spaces for readability
+    ]),
+        # Initial price
+        html.Span([
+        html.I(className="fas fa-euro-sign mr-3"),
+        f"{prix_init:,.0f}".replace(',', ' ')
+    ]),
+        # Residual value
+        html.Span([
+        html.I(className="fas fa-chart-line mr-3"),
+        f"{vr_init:,.0f}".replace(',', ' ')
     ])
+    ]
