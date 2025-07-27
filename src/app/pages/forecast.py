@@ -16,65 +16,16 @@ from src.industrialisation import constants as c
 from src.app.components.DropdownManager import dropdown_manager
 from src.industrialisation.modelapply import CarVrData
 
+
 PAGE_TITLE = "Simulation"
 
 # Register this page
 dash.register_page(__name__, name=PAGE_TITLE,
                    title=f"{PAGE_TITLE} | {TITLE}", path="/forecast", order=1)
 
-# Create dropdown options using data/outil_data/sample_app_car_data.csv
-
-
-# def load_dropdown_options():
-#     """Load marque and modele options from joblib embedding files"""
-#     try:
-#         # Load embedding files (joblib)
-#         embedding_marque = joblib.load(c.EMBEDDING_MARQUE_JOBLIB)
-#         embedding_modele = joblib.load(c.EMBEDDING_MODEL_JOBLIB)
-
-#         # Extract unique values for marque
-#         if isinstance(embedding_marque, pd.DataFrame):
-#             marque_list = sorted(embedding_marque["marque"].unique())
-#         elif isinstance(embedding_marque, dict):
-#             marque_list = sorted(embedding_marque.keys())
-#         else:
-#             marque_list = sorted(list(embedding_marque.index) if hasattr(embedding_marque, 'index') else []) 
-
-#         # Extract unique values for modele
-#         if isinstance(embedding_modele, pd.DataFrame):
-#             modele_list = sorted(embedding_modele["modele"].unique())
-#         elif isinstance(embedding_modele, dict):
-#             modele_list = sorted(embedding_modele.keys())
-#         else:
-#             modele_list = sorted(list(embedding_modele.index) if hasattr(embedding_modele, 'index') else []) 
-
-#         marque_options = [{"label": marque, "value": marque} for marque in marque_list]
-#         modele_options = [{"label": modele, "value": modele} for modele in modele_list]
-        
-#         return marque_options, modele_options
-    
-#     except Exception as e:
-#         print(f"Error loading embedding files: {e}")
-#         # Fallback options
-#         marque_options = [
-#             {"label": "Toyota", "value": "Toyota"},
-#             {"label": "Renault", "value": "Renault"},
-#             {"label": "Peugeot", "value": "Peugeot"},
-#             {"label": "Volkswagen", "value": "Volkswagen"}
-#         ]
-#         modele_options = [
-#             {"label": "Corolla", "value": "Corolla"},
-#             {"label": "Clio", "value": "Clio"},
-#             {"label": "208", "value": "208"},
-#             {"label": "Golf", "value": "Golf"}
-#         ]
-#         return marque_options, modele_options
-
-# MARQUE_OPTIONS, MODELE_OPTIONS = load_dropdown_options()
-
-def create_simulation_form():
+def create_simulation_form_with_id(simulation_id):
     """Create a form for a single simulation"""
-    simulation_id = str(uuid.uuid4())
+    #simulation_id = str(uuid.uuid4())
 
     return html.Div([
         # Header avec bouton de collapse
@@ -131,9 +82,9 @@ def create_simulation_form():
                     ], className="mb-3"),
 
                     dbc.Row([
-                        # Emission CO2
+                        # Émission CO2
                         dbc.Col([
-                            dbc.Label("Emission CO2"),
+                            dbc.Label("Émission CO2"),
                             dbc.Input(id={"type": "emission_CO2", "index": simulation_id}, type="number", placeholder="120")
                         ], md=4, sm=12),
                         # Puissance (CV)
@@ -312,7 +263,7 @@ def create_simulation_form():
                             dbc.Label("Fin du contrat"),
                             dcc.DatePickerSingle(
                                 id={"type": "fin_contrat", "index": simulation_id},
-                                date=date.today(),
+                                date=date(date.today().year + 3, date.today().month, date.today().day),
                                 display_format='DD/MM/YYYY',
                                 placeholder='Sélectionnez une date',
                                 first_day_of_week=1,
@@ -348,8 +299,24 @@ def create_simulation_form():
         )
     ], className="mb-4", id={"type": "simulation-card", "index": simulation_id})
 
+def restore_simulation_form(sim_data):
+    """Restore a simulation form from stored data"""
+    simulation_id = sim_data["id"]
+    values = sim_data.get("values", {})
+
+    # Créer le formulaire avec les valeurs restaurées
+    form = create_simulation_form_with_id (simulation_id)
+
+    return form
+
+
 def layout():
     return dbc.Container([
+
+        # Stockage des données de simulation
+        dcc.Store(id="simulations-store", storage_type="session"),
+        dcc.Store(id="simulation-counter", data=0, storage_type="session"),
+
         # Header
         html.Div([
             html.H2([
@@ -384,33 +351,78 @@ def layout():
     fluid=True)
 
 
+
+
+
 ###########################
 ###### Add callback #######
 ###########################
 
+# Callback pour charger les simulations au chargement de la page
 @callback(
-    Output("simulations-container", "children"),
+        Output("simulations-container", "children", allow_duplicate=False),
+        Input("simulations-store", "data"),
+        prevent_initial_call = False
+)
+def load_simulations_from_store(stored_data):
+    """Charge les simulations depuis le stockage"""
+    if not stored_data:
+        return []
+    
+    simulations = []
+    for sim_data in stored_data:
+        simulation_form = restore_simulation_form(sim_data)
+        simulations.append(simulation_form)
+
+    return simulations
+
+
+# Creating or closing a form for VR simulation
+@callback(
+    [Output("simulations-container", "children", allow_duplicate=True),
+     Output("simulations-store", "data", allow_duplicate=True),
+     Output("simulation-counter", "data", allow_duplicate=True)
+     ],
     [Input("add-simulation", "n_clicks"),
      Input({"type": "remove_sim", "index": ALL}, "n_clicks")],
-    [State("simulations-container", "children")],
+    [State("simulations-container", "children"),
+     State("simulations-store", "data"),
+     State("simulation-counter", "data")
+     ],
     prevent_initial_call=True
 )
-def manage_simulations(add_clicks, remove_clicks, current_simulations):
+def manage_simulations(add_clicks, remove_clicks, current_simulations, stored_data, counter):
     """Manage adding and removing simulation forms"""
     ctx = dash.callback_context
     
     if not ctx.triggered:
-        return current_simulations
+        return current_simulations, stored_data or [], counter or 0
     
+    # Initialiser stored_data si None
+    if stored_data is None:
+        stored_data = []
+
     # Parse trigger
     trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
     
     # Add new simulation
     if "add-simulation" in trigger_id:
         if add_clicks:
-            new_simulation = create_simulation_form()
+            new_counter = (counter or 0) + 1
+            simulation_id = f"sim_{new_counter}"
+
+            new_simulation = create_simulation_form_with_id(simulation_id)
             current_simulations.append(new_simulation)
-            return current_simulations
+
+            # Ajouter aux données stockées dans dcc.Store
+            stored_data.append(
+                {
+                    "id": simulation_id,
+                    "values": {},
+                    "results": None
+                }
+            )
+            return current_simulations, stored_data, new_counter
     
     # Remove simulation
     if "remove_sim" in trigger_id:
@@ -424,10 +436,13 @@ def manage_simulations(add_clicks, remove_clicks, current_simulations):
             sim_id = sim["props"]["id"]["index"]
             if sim_id != simulation_to_remove:
                 filtered_simulations.append(sim)
-        
-        return filtered_simulations
+
+        # Filtrer les données stockées
+        stored_data = [s for s in stored_data if s["id"] != simulation_to_remove]
+
+        return filtered_simulations, stored_data, counter
     
-    return current_simulations
+    return current_simulations, stored_data, counter
 
 
 @callback(
@@ -489,7 +504,7 @@ def update_modele_options(selected_marque):
     """Update modele dropdown options based on selected marque"""
     if selected_marque:
         try:
-            modele_options = dropdown_manager.get_modeles_by_marque(selected_marque)
+            modele_options = dropdown_manager.get_filtered_modeles(selected_marque)
             return modele_options, False, None
         except Exception as e:
             print(f"Error updating modele options: {e}")
@@ -523,33 +538,41 @@ def refresh_dropdown_data(n_clicks):
     ]
 
 
+# CALLBACK PRINCIPAL - Calcul avec sauvegarde intégrée
+
 @callback(
     Output({"type": "results", "index": MATCH}, "children"),
+
     [Input({"type": "calculate", "index": MATCH}, "n_clicks")],
-    [State({"type": "marque", "index": MATCH}, "value"),
-     State({"type": "modele", "index": MATCH}, "value"),
-     State({"type": "annee", "index": MATCH}, "value"),
-     State({"type": "emission_CO2", "index": MATCH}, "value"),
-     State({"type": "puissance", "index": MATCH}, "value"),
-     State({"type": "transmission", "index": MATCH}, "value"),
-     State({"type": "carburant", "index": MATCH}, "value"),
-     State({"type": "classe_vehicule", "index": MATCH}, "value"),
-     State({"type": "couleur", "index": MATCH}, "value"),
-     State({"type": "sellerie", "index": MATCH}, "value"),
-     State({"type": "crit_air", "index": MATCH}, "value"),
-     State({"type": "usage_commerciale_anterieure", "index": MATCH}, "value"),
-     State({"type": "mise_en_circulation", "index": MATCH}, "date"),
-     State({"type": "prix_neuf", "index": MATCH}, "value"),
-     State({"type": "downpayment_slider", "index": MATCH}, "value"),
-     State({"type": "kilometrage_slider", "index": MATCH}, "value"),
-     State({"type": "interest_rate_slider", "index": MATCH}, "value"),
-     State({"type": "fin_contrat", "index": MATCH}, "date")],
+    [
+        State({"type": "marque", "index": MATCH}, "value"),
+        State({"type": "modele", "index": MATCH}, "value"),
+        State({"type": "annee", "index": MATCH}, "value"),
+        State({"type": "emission_CO2", "index": MATCH}, "value"),
+        State({"type": "puissance", "index": MATCH}, "value"),
+        State({"type": "transmission", "index": MATCH}, "value"),
+        State({"type": "carburant", "index": MATCH}, "value"),
+        State({"type": "classe_vehicule", "index": MATCH}, "value"),
+        State({"type": "couleur", "index": MATCH}, "value"),
+        State({"type": "sellerie", "index": MATCH}, "value"),
+        State({"type": "crit_air", "index": MATCH}, "value"),
+        State({"type": "usage_commerciale_anterieure", "index": MATCH}, "value"),
+        State({"type": "mise_en_circulation", "index": MATCH}, "date"),
+        State({"type": "prix_neuf", "index": MATCH}, "value"),
+        State({"type": "downpayment_slider", "index": MATCH}, "value"),
+        State({"type": "kilometrage_slider", "index": MATCH}, "value"),
+        State({"type": "interest_rate_slider", "index": MATCH}, "value"),
+        State({"type": "fin_contrat", "index": MATCH}, "date"),
+        State("simulations-store", "data"),
+        State({"type": "calculate", "index": MATCH}, "id")
+     ],
     prevent_initial_call=True
 )
 def calculate_residual_value(n_clicks, marque, modele, annee, emission_co2, puissance, 
                            transmission, carburant, classe_vehicule, couleur, sellerie,
                            crit_air, usage_commerciale, mise_en_circulation, prix_neuf,
-                           downpayment, kilometrage, interest_rate, fin_contrat):
+                           downpayment, kilometrage, interest_rate, fin_contrat, 
+                           stored_data, button_id):
     """Calculate residual value based on input parameters"""
     
     if not n_clicks:
@@ -567,14 +590,14 @@ def calculate_residual_value(n_clicks, marque, modele, annee, emission_co2, puis
     missing_fields = [field for field, value in required_fields.items() if not value]
     
     if missing_fields:
-        return dbc.Alert([
+        alert_result= dbc.Alert([
             html.H5("Champs requis manquants", className="alert-heading"),
             html.P(f"Veuillez remplir: {', '.join(missing_fields)}")
         ], color="warning", className="mt-3")
+        return alert_result
     
     try:
         # Create CarVrData instance
- 
         car_data = CarVrData(
             marque=marque,
             modele=modele,
@@ -602,53 +625,53 @@ def calculate_residual_value(n_clicks, marque, modele, annee, emission_co2, puis
         prediction = model_app.predict()
         
         # Calculate residual value
-        residual_value = prix_neuf * prediction[0] if prediction else 0
-        residual_percentage = prediction[0] * 100 if prediction else 0
+        residual_value = prix_neuf * prediction if prediction else 0
+        residual_percentage = prediction * 100 if prediction else 0
         
+        # Calculate months from mise_en_circulation to fin_contrat
+        if isinstance(mise_en_circulation, str):
+            start_date = datetime.fromisoformat(mise_en_circulation)
+        else:
+            start_date = datetime.combine(mise_en_circulation, datetime.min.time())
+            
+        if isinstance(fin_contrat, str):
+            end_date = datetime.fromisoformat(fin_contrat)
+        else:
+            end_date = datetime.combine(fin_contrat, datetime.min.time())
+        
+        total_months = ((end_date.year - start_date.year) * 12 + 
+                        end_date.month - start_date.month)
+            
         # Get prediction curve for chart
         try:
-            model_app_curve = VrModelApplication(car_data)
-            curve_predictions = model_app_curve.predict_curve()
-            
-            # Create plotly chart
+            #model_app_curve = VrModelApplication(car_data)
+            #curve_predictions = model_app_curve.predict_curve()
+            curve_predictions = model_app.predict_curve()
 
-            
-            # Calculate months from mise_en_circulation to fin_contrat
-            from datetime import datetime
-            if isinstance(mise_en_circulation, str):
-                start_date = datetime.fromisoformat(mise_en_circulation)
-            else:
-                start_date = datetime.combine(mise_en_circulation, datetime.min.time())
-                
-            if isinstance(fin_contrat, str):
-                end_date = datetime.fromisoformat(fin_contrat)
-            else:
-                end_date = datetime.combine(fin_contrat, datetime.min.time())
-            
-            total_months = ((end_date.year - start_date.year) * 12 + 
-                          end_date.month - start_date.month)
-            
-            months = list(range(1, min(len(curve_predictions) + 1, total_months + 1)))
-            values = [prix_neuf * pred for pred in curve_predictions[:len(months)]]
-            
+            # Create a figure for the prediction vr curve
             fig = go.Figure()
             fig.add_trace(go.Scatter(
-                x=months,
-                y=values,
+                x=curve_predictions["age_months"],
+                y=curve_predictions["prediction_vr"],
                 mode='lines+markers',
-                name='Valeur résiduelle',
+                name='Predicted VR',
                 line=dict(color='#007bff', width=3),
-                marker=dict(size=6)
+                marker=dict(size=6),
+                text=curve_predictions["prediction_vr"].apply(lambda x: f"VR: {x:,.0f} €"),
+                textposition="top center",
+                hoverinfo="text",
+                hovertemplate="Valeur résiduelle: %{y:,.0f} €<br>Mois: %{x}<extra></extra>"
             ))
-            
+
             fig.update_layout(
                 title="Évolution de la valeur résiduelle",
+                title_x=0.5,
                 xaxis_title="Mois",
                 yaxis_title="Valeur (€)",
                 template="plotly_white",
                 height=400
             )
-            
+                        
             chart_component = dcc.Graph(figure=fig)
             
         except Exception as e:
@@ -659,7 +682,8 @@ def calculate_residual_value(n_clicks, marque, modele, annee, emission_co2, puis
         monthly_depreciation = (prix_neuf - residual_value) / total_months if total_months > 0 else 0
         total_cost = prix_neuf - downpayment + (monthly_depreciation * total_months)
         
-        return html.Div([
+        # Créer les résultats
+        results_html= html.Div([
             dbc.Alert([
                 html.H4([
                     html.I(className="fas fa-check-circle mr-2"),
@@ -728,12 +752,115 @@ def calculate_residual_value(n_clicks, marque, modele, annee, emission_co2, puis
             ], color="success", className="mt-3")
         ])
         
+        return results_html
+        
     except Exception as e:
-        return dbc.Alert([
+        error_result = dbc.Alert([
             html.H5("Erreur de calcul", className="alert-heading"),
             html.P(f"Une erreur est survenue lors du calcul: {str(e)}")
         ], color="danger", className="mt-3")
-
+        return error_result
+    
+# CALLBACK SÉPARÉ pour la sauvegarde dans le store
+# @callback(
+#     Output("simulations-store", "data", allow_duplicate=True),
+#     [Input({"type": "calculate", "index": ALL}, "n_clicks")],
+#     [
+#         State({"type": "marque", "index": ALL}, "value"),
+#         State({"type": "modele", "index": ALL}, "value"),
+#         State({"type": "annee", "index": ALL}, "value"),
+#         State({"type": "emission_CO2", "index": ALL}, "value"),
+#         State({"type": "puissance", "index": ALL}, "value"),
+#         State({"type": "transmission", "index": ALL}, "value"),
+#         State({"type": "carburant", "index": ALL}, "value"),
+#         State({"type": "classe_vehicule", "index": ALL}, "value"),
+#         State({"type": "couleur", "index": ALL}, "value"),
+#         State({"type": "sellerie", "index": ALL}, "value"),
+#         State({"type": "crit_air", "index": ALL}, "value"),
+#         State({"type": "usage_commerciale_anterieure", "index": ALL}, "value"),
+#         State({"type": "mise_en_circulation", "index": ALL}, "date"),
+#         State({"type": "prix_neuf", "index": ALL}, "value"),
+#         State({"type": "downpayment_slider", "index": ALL}, "value"),
+#         State({"type": "kilometrage_slider", "index": ALL}, "value"),
+#         State({"type": "interest_rate_slider", "index": ALL}, "value"),
+#         State({"type": "fin_contrat", "index": ALL}, "date"),
+#         State("simulations-store", "data")
+#      ],
+#     prevent_initial_call=True
+# )
+# def save_simulation_data(n_clicks_list, marque_list, modele_list, annee_list, emission_co2_list, 
+#                         puissance_list, transmission_list, carburant_list, classe_vehicule_list, 
+#                         couleur_list, sellerie_list, crit_air_list, usage_commerciale_list,
+#                         mise_en_circulation_list, prix_neuf_list, downpayment_list, 
+#                         kilometrage_list, interest_rate_list, fin_contrat_list, stored_data):
+#     """Save simulation data when calculate button is clicked"""
+    
+#     ctx = dash.callback_context
+#     if not ctx.triggered or not any(n_clicks_list):
+#         return stored_data or []
+    
+#     if stored_data is None:
+#         stored_data = []
+    
+#     # Mettre à jour toutes les simulations
+#     for i in range(len(marque_list)):
+#         simulation_id = f"sim_{i+1}"  # Ajustez selon votre logique d'ID
+        
+#         # Trouver ou créer l'entrée pour cette simulation
+#         sim_found = False
+#         for sim_data in stored_data:
+#             if sim_data["id"] == simulation_id:
+#                 sim_data["values"].update({
+#                     "marque": marque_list[i] if i < len(marque_list) else None,
+#                     "modele": modele_list[i] if i < len(modele_list) else None,
+#                     "annee": annee_list[i] if i < len(annee_list) else None,
+#                     "emission_CO2": emission_co2_list[i] if i < len(emission_co2_list) else None,
+#                     "puissance": puissance_list[i] if i < len(puissance_list) else None,
+#                     "transmission": transmission_list[i] if i < len(transmission_list) else None,
+#                     "carburant": carburant_list[i] if i < len(carburant_list) else None,
+#                     "classe_vehicule": classe_vehicule_list[i] if i < len(classe_vehicule_list) else None,
+#                     "couleur": couleur_list[i] if i < len(couleur_list) else None,
+#                     "sellerie": sellerie_list[i] if i < len(sellerie_list) else None,
+#                     "crit_air": crit_air_list[i] if i < len(crit_air_list) else None,
+#                     "usage_commerciale_anterieure": usage_commerciale_list[i] if i < len(usage_commerciale_list) else None,
+#                     "mise_en_circulation": mise_en_circulation_list[i] if i < len(mise_en_circulation_list) else None,
+#                     "prix_neuf": prix_neuf_list[i] if i < len(prix_neuf_list) else None,
+#                     "downpayment": downpayment_list[i] if i < len(downpayment_list) else None,
+#                     "kilometrage": kilometrage_list[i] if i < len(kilometrage_list) else None,
+#                     "interest_rate": interest_rate_list[i] if i < len(interest_rate_list) else None,
+#                     "fin_contrat": fin_contrat_list[i] if i < len(fin_contrat_list) else None
+#                 })
+#                 sim_found = True
+#                 break
+        
+#         # Si la simulation n'existe pas dans le store, la créer
+#         if not sim_found:
+#             stored_data.append({
+#                 "id": simulation_id,
+#                 "values": {
+#                     "marque": marque_list[i] if i < len(marque_list) else None,
+#                     "modele": modele_list[i] if i < len(modele_list) else None,
+#                     "annee": annee_list[i] if i < len(annee_list) else None,
+#                     "emission_CO2": emission_co2_list[i] if i < len(emission_co2_list) else None,
+#                     "puissance": puissance_list[i] if i < len(puissance_list) else None,
+#                     "transmission": transmission_list[i] if i < len(transmission_list) else None,
+#                     "carburant": carburant_list[i] if i < len(carburant_list) else None,
+#                     "classe_vehicule": classe_vehicule_list[i] if i < len(classe_vehicule_list) else None,
+#                     "couleur": couleur_list[i] if i < len(couleur_list) else None,
+#                     "sellerie": sellerie_list[i] if i < len(sellerie_list) else None,
+#                     "crit_air": crit_air_list[i] if i < len(crit_air_list) else None,
+#                     "usage_commerciale_anterieure": usage_commerciale_list[i] if i < len(usage_commerciale_list) else None,
+#                     "mise_en_circulation": mise_en_circulation_list[i] if i < len(mise_en_circulation_list) else None,
+#                     "prix_neuf": prix_neuf_list[i] if i < len(prix_neuf_list) else None,
+#                     "downpayment": downpayment_list[i] if i < len(downpayment_list) else None,
+#                     "kilometrage": kilometrage_list[i] if i < len(kilometrage_list) else None,
+#                     "interest_rate": interest_rate_list[i] if i < len(interest_rate_list) else None,
+#                     "fin_contrat": fin_contrat_list[i] if i < len(fin_contrat_list) else None
+#                 },
+#                 "results": None
+#             })
+    
+#     return stored_data
 
 @callback(
     Output("summary-section", "children"),

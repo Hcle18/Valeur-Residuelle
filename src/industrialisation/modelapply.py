@@ -12,6 +12,7 @@ from typing import Union, List
 
 # Local imports
 from src.industrialisation import constants as c
+from src.app.utils.parse_date import parse_date 
 
 # Class for data: list of input features needed for the model
 @dataclass
@@ -59,7 +60,10 @@ class VrModelApplication:
             # Convert DataFrame rows to CarVrData objects for comptability
             self.data_list = []
             for _, row in car_data.iterrows():
-                car_obj = CarVrData(**row.to_dict())
+                car_obj = CarVrData(**row.to_dict()) # unpack dictionnary with **.
+                #For example, if the row contains data like {'marque': 'Toyota', 'modele': 'Camry', 'kilometrage': 50000.0}, 
+                # the unpacking operation effectively translates to 
+                # CarVrData(marque='Toyota', modele='Camry', kilometrage=50000.0, ...) for all the fields present in the dictionary.
                 self.data_list.append(car_obj)
 
         elif isinstance(car_data, list):
@@ -88,6 +92,7 @@ class VrModelApplication:
         # Prepare the data
         self.data_df= self._prepared_data(self.data_df, self.embedding_marque, self.embedding_model)
 
+
     @staticmethod
     def _prepared_data(df: pd.DataFrame, embedding_marque: pd.DataFrame, embedding_model: pd.DataFrame) -> pd.DataFrame:
         """
@@ -97,8 +102,12 @@ class VrModelApplication:
         #df['mise_en_circulation'] = pd.to_datetime(df['mise_en_circulation'], format="%d/%m/%Y", errors='coerce')
         #df['fin_du_contrat'] = pd.to_datetime(df['fin_du_contrat'], format="%d/%m/%Y", errors='coerce')
 
-        df['age_months'] = (pd.to_datetime(df['fin_du_contrat'], format="%d/%m/%Y", errors='coerce') - pd.to_datetime(df['mise_en_circulation'], format="%d/%m/%Y", errors='coerce')).dt.days // 30
+        # Try to parse both possible date formats for 'mise_en_circulation' and 'fin_du_contrat'
+        df['mise_en_circulation_dt'] = df['mise_en_circulation'].apply(parse_date)
+        df['fin_du_contrat_dt'] = df['fin_du_contrat'].apply(parse_date)
+        df['age_months'] = (df['fin_du_contrat_dt'] - df['mise_en_circulation_dt']).dt.days // 30
         df['age_months'] = df['age_months'].apply(lambda x: round(x, 1) if pd.notnull(x) else None)
+
         df["km_per_month"] = df["kilometrage"] / df["age_months"]
         df["marque"] = df['marque'].str.upper()
         df["modele"] = df['modele'].str.upper()
@@ -106,6 +115,9 @@ class VrModelApplication:
         # Apply the embedding vectors for 'marque' and 'modele'
         df = pd.merge(df, embedding_marque, on="marque", how="left")
         df = pd.merge(df, embedding_model, on="modele", how="left")
+
+        print(df[['age_months', 'mise_en_circulation', 'fin_du_contrat']].head())
+        print(df.dtypes)
 
         return df
 
@@ -117,7 +129,6 @@ class VrModelApplication:
         """
 
         # Apply the transformation pipeline
-        #print(self.data_df.head())
         df_transform = self.transformer.transform(self.data_df)
         predictions = self.model.predict(df_transform)
         
@@ -162,6 +173,8 @@ class VrModelApplication:
         df_transform_curve = self.transformer.transform(car_df)
         predictions_curve = self.model.predict(df_transform_curve)
 
+        #print(f"Predictions curve print: {predictions_curve}")
+
         # Add predictions to the DataFrame
         car_df['prediction_vr_ratio'] = predictions_curve
         car_df['prediction_vr'] = round(car_df['prediction_vr_ratio'] * car_df['prix_neuf'], 0)
@@ -176,20 +189,20 @@ class VrModelApplication:
         car_df = pd.concat([pd.DataFrame([initial_row]), car_df], ignore_index=True)
 
         # Create a figure for the prediction vr curve
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=car_df["age_months"],
-            y=car_df["prediction_vr"],
-            mode='lines+markers',
-            name='Predicted VR',
-            line=dict(color='blue', width=2),
-            marker=dict(size=5, color='blue', symbol='circle')
-        ))
+        # fig = go.Figure()
+        # fig.add_trace(go.Scatter(
+        #     x=car_df["age_months"],
+        #     y=car_df["prediction_vr"],
+        #     mode='lines+markers',
+        #     name='Predicted VR',
+        #     line=dict(color='blue', width=2),
+        #     marker=dict(size=5, color='blue', symbol='circle')
+        # ))
  
         print(f"Predictions VR ratio: {predictions_curve}")
         print(f"Predictions VR: {car_df['prediction_vr']}")
 
-        return fig
+        return car_df
     
     def predict_all_curves(self):
         """
