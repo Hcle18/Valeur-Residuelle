@@ -11,9 +11,9 @@ from src.app.utils.images import logo_encoded, icon_encoded
 
 NAVBAR = {
     "Accueil" : {"icon": "fa-solid fa-car fa-sm", "relative_path" : "/"},
-    "Simulation" : {"icon": "fa-solid fa-calculator", "relative_path" : "/forecast"},
-    "Reforecast" : {"icon": "fa-solid fa-sync", "relative_path": "/reforecast"},
-    "About" : {"icon": "fa-solid fa-circle-info", "relative_path": "/about"},
+    "Simulation" : {"icon": "fa-solid fa-calculator fa-sm", "relative_path" : "/forecast"},
+    "Tableau de bord" : {"icon": "fa-solid fa-table fa-sm", "relative_path": "/suivi"},
+    "About" : {"icon": "fa-solid fa-circle-info fa-sm", "relative_path": "/about"},
 }
 
 

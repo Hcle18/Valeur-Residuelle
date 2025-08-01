@@ -35,7 +35,9 @@ def create_simulation_form_with_id(simulation_id):
                     dbc.Button([
                         html.I(id={"type": "collapse_icon", "index": simulation_id}, 
                                className="fas fa-chevron-down mr-2"),
-                        html.H5("Nouvelle Simulation", className="mb-0 d-inline")
+                        html.H5(children=f"Simulation n° {simulation_id.split('_')[1]}", 
+                                id={"type": "simulation_title", "index": simulation_id}, 
+                                className="mb-0 d-inline")
                     ], 
                     id={"type": "collapse_toggle", "index": simulation_id},
                     color="link", 
@@ -84,13 +86,17 @@ def create_simulation_form_with_id(simulation_id):
                     dbc.Row([
                         # Émission CO2
                         dbc.Col([
-                            dbc.Label("Émission CO2"),
-                            dbc.Input(id={"type": "emission_CO2", "index": simulation_id}, type="number", placeholder="120")
+                            dbc.Label("Émission CO2 (g/km)"),
+                            dbc.Input(id={"type": "emission_CO2", "index": simulation_id}, type="number", 
+                                      value=120,  # Valeur par défaut
+                                      )
                         ], md=4, sm=12),
                         # Puissance (CV)
                         dbc.Col([
                             dbc.Label("Puissance (CV)"),
-                            dbc.Input(id={"type": "puissance", "index": simulation_id}, type="number", placeholder="130")
+                            dbc.Input(id={"type": "puissance", "index": simulation_id}, type="number", 
+                                      value=130,  # Valeur par défaut
+                                      )
                         ], md=4, sm=12),
                         # Type de transmission
                         dropdown_manager.create_dropdown(
@@ -162,6 +168,7 @@ def create_simulation_form_with_id(simulation_id):
                     ], className="mb-4"),
 
                     # Section Contrat de Leasing
+                    html.Hr(),
                     html.H6("Informations Contrat", className="text-success mb-3"),
                     dbc.Row([
                         # Prix à neuf
@@ -257,7 +264,7 @@ def create_simulation_form_with_id(simulation_id):
                                     className="text-center mt-2 fw-bold text-info"
                                 )
                             ])
-                        ], md=6, sm=12),
+                        ], md=8, sm=12),
 
                         dbc.Col([
                             dbc.Label("Fin du contrat"),
@@ -275,24 +282,27 @@ def create_simulation_form_with_id(simulation_id):
                                 style={'width': '100%'},
                                 min_date_allowed=date.today()
                             )
-                        ], md=6, sm=12),
+                        ], md=4, sm=12),
                     ], className="mb-4"),
+
+                    html.Hr(className="mb-4"),
 
                     # Calculate Button
                     dbc.Row([
                         dbc.Col([
-                            dbc.Button([
-                                html.I(className="fas fa-calculator mr-2"),
-                                "Commencer le calcul"
-                            ], id={"type": "calculate", "index": simulation_id},
-                                color="primary", size="lg", className="w-100")
+                            dbc.Button(
+                                [
+                                    html.I(className="fas fa-calculator mr-2"),
+                                    "Commencer le calcul"
+                                ], id={"type": "calculate", "index": simulation_id},
+                                n_clicks=0, color="primary", size="lg", className="w-100"),
                         ], width=12)
-                    ], className="mb-3"),
+                    ], className="mb-4"),
 
                     # Results Section
-                    html.Div(id={"type": "results", "index": simulation_id})
+                    dbc.Spinner(html.Div(id={"type": "results", "index": simulation_id}, className="mt-2"), color="primary"),
                 ])
-            ], className="border-0")  # Retire la bordure de la carte interne
+            ], className="border-1") 
         ], 
         id={"type": "collapse_content", "index": simulation_id},
         is_open=True  # Ouvert par défaut
@@ -309,6 +319,9 @@ def restore_simulation_form(sim_data):
 
     return form
 
+#######################
+###### LAYOUT #########
+#######################
 
 def layout():
     return dbc.Container([
@@ -680,8 +693,12 @@ def calculate_residual_value(n_clicks, marque, modele, annee, emission_co2, puis
         
         # Calculate financial metrics
         monthly_depreciation = (prix_neuf - residual_value) / total_months if total_months > 0 else 0
-        total_cost = prix_neuf - downpayment + (monthly_depreciation * total_months)
-        
+        total_cost_before_interest = prix_neuf - downpayment + (monthly_depreciation * total_months)
+        #print(f"Total cost: {total_cost_before_interest}, Monthly depreciation: {monthly_depreciation}")
+        monthly_interest = (1+ (interest_rate / 100)) ** (1/12) - 1
+        # Monthly rent calculation
+        monthly_rent = monthly_depreciation + (total_cost_before_interest * monthly_interest)
+
         # Créer les résultats
         results_html= html.Div([
             dbc.Alert([
@@ -730,10 +747,7 @@ def calculate_residual_value(n_clicks, marque, modele, annee, emission_co2, puis
                             html.Td("Apport initial", className="fw-bold"),
                             html.Td(f"{downpayment:,.0f} €".replace(",", " "))
                         ]),
-                        html.Tr([
-                            html.Td("Valeur résiduelle", className="fw-bold"),
-                            html.Td(f"{residual_value:,.0f} €".replace(",", " "))
-                        ]),
+
                         html.Tr([
                             html.Td("Kilométrage prévu", className="fw-bold"),
                             html.Td(f"{kilometrage:,.0f} km".replace(",", " "))
@@ -745,11 +759,25 @@ def calculate_residual_value(n_clicks, marque, modele, annee, emission_co2, puis
                         html.Tr([
                             html.Td("Taux d'intérêt", className="fw-bold"),
                             html.Td(f"{interest_rate}%")
+                        ]),
+                        html.Tr([
+                            html.Td("Valeur résiduelle", className="fw-bold"),
+                            html.Td(f"{residual_value:,.0f} €".replace(",", " "))
+                        ]),
+                        html.Tr([
+                            html.Td("Loyer mensuel estimé", className="fw-bold"),
+                            html.Td(f"{monthly_rent:,.0f} €".replace(",", " "))
                         ])
                     ])
-                ], striped=True, hover=True)
-                
-            ], color="success", className="mt-3")
+                ], striped=True, hover=True),
+
+                # Button to save simulation
+                dbc.Button([
+                    html.I(className="fas fa-save mr-2"),
+                    "Sauvegarder la simulation"
+                ])
+
+            ], color="success", className="mt-3"),
         ])
         
         return results_html

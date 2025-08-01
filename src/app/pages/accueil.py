@@ -131,7 +131,7 @@ def layout():
                         dbc.CardBody([
                             html.I(className="fas fa-calculator fa-3x text-primary mb-3"),
                             html.H4("Nouvelle Simulation", className="card-title"),
-                            html.P("Calculez la valeur résiduelle pour un nouveau contrat de leasing"),
+                            html.P("Simuler la valeur résiduelle pour un nouveau contrat"),
                             dbc.Button([
                                 html.I(className="fas fa-arrow-right me-2"),
                                 "Commencer"
@@ -143,9 +143,9 @@ def layout():
                 dbc.Col([
                     dbc.Card([
                         dbc.CardBody([
-                            html.I(className="fas fa-sync fa-3x text-secondary mb-3"),
-                            html.H4("Reforecast Portfolio", className="card-title"),
-                            html.P("Mettez à jour les valeurs résiduelles du portefeuille existant"),
+                            html.I(className="fas fa-table fa-3x text-secondary mb-3"),
+                            html.H4("Dashboard de suivi", className="card-title"),
+                            html.P("Suivre les valeurs résiduelles du portefeuille existant"),
                             dbc.Button([
                                 html.I(className="fas fa-arrow-right me-2"),
                                 "Voir Portfolio"

@@ -137,6 +137,7 @@ class DropdownManager:
             dcc.Dropdown(
                 id=dropdown_id,
                 options=options,
+                value=options[0]['value'] if options else None,
                 placeholder=dropdown_placeholder,
                 searchable=searchable,
                 clearable=clearable,
@@ -160,6 +161,7 @@ class DropdownManager:
                 id=input_id,
                 type=input_type,
                 placeholder=placeholder,
+                value=ranges.get("min", 0),  # Valeur par défaut
                 min=ranges.get("min"),
                 max=ranges.get("max")
             )
