@@ -241,7 +241,7 @@ def create_simulation_form_with_id(simulation_id):
                     dbc.Row([
                         # Taux d'intérêt slider
                         dbc.Col([
-                            dbc.Label("Taux d'intérêt (%)"),
+                            dbc.Label("Taux d'intérêt annuel (%)"),
                             html.Div([
                                 dcc.Slider(
                                     id={"type": "interest_rate_slider", "index": simulation_id},
@@ -757,7 +757,7 @@ def calculate_residual_value(n_clicks, marque, modele, annee, emission_co2, puis
                             html.Td(f"{total_months} mois")
                         ]),
                         html.Tr([
-                            html.Td("Taux d'intérêt", className="fw-bold"),
+                            html.Td("Taux d'intérêt annuel", className="fw-bold"),
                             html.Td(f"{interest_rate}%")
                         ]),
                         html.Tr([
