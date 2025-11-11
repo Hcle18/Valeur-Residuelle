@@ -19,3 +19,262 @@
         margin-right: 10px;
     }
 }
+
+/* This creates a skinny side bar fixed to the left of the page */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 5rem;
+  padding: 2rem 1rem;
+  background-color: whitesmoke;
+  z-index: 1050;
+  transition: width 0.1s ease-in-out;
+}
+
+/* when the user hovers on the sidebar, expand it */
+.sidebar:hover {
+  width: 16rem;
+}
+
+/* make sure the contents of the navlink don't wrap when navbar collapses */
+.sidebar .nav-link {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* fix the width of the icons */
+.sidebar .nav-link i {
+  width: 1rem;
+}
+
+/* hide the navlink labels by default */
+.sidebar .nav-link span {
+  visibility: hidden;
+  opacity: 1;
+  transition: opacity 0.1s ease-in-out;
+}
+
+/* when the sidebar is hovered, reveal the labels */
+.sidebar:hover .nav-link span {
+  visibility: visible;
+  opacity: 1;
+  color: black;
+}
+
+/* container for the sidebar header. make sure the contents don't wrap when
+ * the sidebar is collapsed.
+ */
+.sidebar-header {
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* position the header relative to the logo and hide by default */
+.sidebar-header h2 {
+  opacity: 0;
+  margin-left: 1rem;
+  margin-bottom: 0;
+  transition: opacity 0.1s ease-in-out;
+}
+
+/* reveal the header when the sidebar is toggled */
+.sidebar:hover .sidebar-header h2 {
+  opacity: 1;
+}
+
+/* position the content relative to the collapsed sidebar */
+.content {
+  margin-left: 7rem;
+  margin-right: 2rem;
+  padding: 2rem 1rem;
+}
+
+/* position the header relative to the logo and hide by default */
+.sidebar-header img {
+  opacity: 0;
+  margin-left: 1rem;
+  margin-bottom: 0;
+  transition: opacity 0.1s ease-in-out;
+}
+
+/* reveal the header when the sidebar is toggled */
+.sidebar:hover .sidebar-header img {
+  opacity: 1;
+}
+
+/* Custom content styling when sidebar is expanded */
+.sidebar:hover {
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+}
+
+/* Add custom animation for nav links when sidebar expands */
+.sidebar:hover .nav-link {
+  transform: translateX(5px);
+  transition: transform 0.2s ease-in-out;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  margin: 2px 0;
+}
+
+/* Custom styling for active nav link when sidebar is expanded */
+.sidebar:hover .nav-link.active {
+  background-color: rgba(0, 123, 255, 0.1);
+  border-left: 3px solid #007bff;
+}
+
+/* Add custom divider when sidebar is expanded */
+.sidebar:hover::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, transparent, #007bff, transparent);
+  opacity: 0.5;
+}
+
+/* Custom tooltip styling when sidebar is collapsed */
+.sidebar:not(:hover) .nav-link {
+  position: relative;
+}
+
+.sidebar:not(:hover) .nav-link:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #333;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 1000;
+  font-size: 0.875rem;
+}
+
+/* JavaScript-based toggle states */
+.sidebar-expanded {
+  width: 16rem !important;
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef) !important;
+  box-shadow: 2px 0 15px rgba(0, 0, 0, 0.15) !important;
+}
+
+.sidebar-expanded .sidebar-header h2,
+.sidebar-expanded .sidebar-header img {
+  opacity: 1 !important;
+}
+
+.sidebar-expanded .nav-link span {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Additional animations for toggle-based approach */
+.sidebar-expanded .nav-link {
+  animation: slideInRight 0.3s ease-out;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  margin: 2px 0;
+  padding: 8px 12px;
+}
+
+.sidebar-expanded .nav-link:hover {
+  background-color: rgba(0, 123, 255, 0.1);
+  transform: translateX(5px);
+  transition: all 0.2s ease-in-out;
+}
+
+.sidebar-expanded .nav-link.active {
+  background-color: rgba(0, 123, 255, 0.2);
+  border-left: 4px solid #007bff;
+  font-weight: 600;
+}
+
+/* Keyframe animation for slide in effect */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Custom scrollbar for expanded sidebar */
+.sidebar-expanded::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-expanded::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.sidebar-expanded::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.sidebar-expanded::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Content adjustment when sidebar is expanded via toggle */
+.content-shifted {
+  margin-left: 18rem !important;
+  transition: margin-left 0.3s ease-in-out;
+}
+
+/* Custom sidebar extra content */
+.sidebar-extra-content {
+  position: absolute;
+  bottom: 20px;
+  left: 10px;
+  right: 10px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Show extra content when sidebar is expanded */
+.sidebar-expanded .sidebar-extra-content,
+.sidebar:hover .sidebar-extra-content {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Style for extra content elements */
+.sidebar-extra-content .btn {
+  font-size: 0.875rem;
+  border-radius: 6px;
+  transition: all 0.2s ease-in-out;
+}
+
+.sidebar-extra-content .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom badge style for version info */
+.sidebar-extra-content .text-muted {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sidebar-extra-content {
+    display: none;
+  }
+}

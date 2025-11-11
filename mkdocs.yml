@@ -1,0 +1,130 @@
+site_name: Proof of Concept - Valeur Résiduelle - Documentation
+site_description: Modèle de Machine Learning pour l'estimation des prix de véhicules d'occasion
+site_author: NEXIALOG
+site_url: ""
+
+# Repository
+repo_name: Hcle18/Valeur-Residuelle
+repo_url: https://github.com/Hcle18/Valeur-Residuelle
+
+# Configuration
+theme:
+  name: material
+  language: fr
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      primary: blue
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: blue
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+
+# Extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: Hcle18
+      repo: Valeur-Residuelle
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Plugins
+plugins:
+  - search:
+      lang: fr
+  - mkdocs-jupyter:
+      include_source: True
+      execute: false
+      allow_errors: false
+  - mermaid2
+
+# Extra JavaScript for MathJax
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+# Navigation
+nav:
+  - Accueil: index.md
+  - Projet:
+    - Vue d'ensemble: projet/overview.md
+    - Architecture: projet/architecture.md
+    - Méthodologie: projet/methodology.md
+  - Données:
+    - Sources: data/sources.md
+    - Preprocessing: data/preprocessing.md
+    - Exploration: data/eda.md
+  - Modèles:
+    - Modélisation: models/modeling.md
+    - Évaluation: models/evaluation.md
+    - Performances: models/performance.md
+  - Notebooks:
+    - PoC Modelling: notebooks/VR PoC modelling.ipynb
+  - Application:
+    - Interface: app/interface.md
+    - API: app/api.md
+    - Déploiement: app/deployment.md
+  - Développement:
+    - Installation: dev/installation.md
+    - Génération HTML: dev/build-html.md
+    - Tests: dev/tests.md
+    - Contribution: dev/contributing.md
+
+# Customization
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Hcle18/Valeur-Residuelle
+  version:
+    provider: mike

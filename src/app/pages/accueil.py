@@ -92,8 +92,8 @@ def layout():
                                         id="card-prix-init",
                                         className="text-success mb-0"
                                         ),
-                                    html.P("Valeur Initiale", className="text-muted mb-0"),
-                                    html.Small("Coût d'achat initial", className="text-muted")
+                                    html.P("Total Valeur Initiale", className="text-muted mb-0"),
+                                    html.Small("Total Coût d'achat initial", className="text-muted")
                                 ])
                             ])
                         ], className="border-0 shadow-sm")
@@ -113,7 +113,7 @@ def layout():
                                         className="text-info mb-0"
                                         ),
 
-                                    html.P("Valeur Résiduelle Totale", className="text-muted mb-0"),
+                                    html.P("Total Valeur Résiduelle", className="text-muted mb-0"),
                                     html.Small("Estimation initiale", className="text-muted")
                                 ])
                             ])

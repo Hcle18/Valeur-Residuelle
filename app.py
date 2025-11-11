@@ -68,6 +68,7 @@ content = html.Div(
         # spinner_class_name = "fixed-top",
         # spinner_style={"margin-top": "100px"},
     className="content",
+    id="main-content"
 )
 
 def serve_layout():

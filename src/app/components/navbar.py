@@ -40,10 +40,10 @@ def generate_nav_links(navbar_dict):
 navbar = dbc.Navbar(
     dbc.Container(
         [
-            dcc.Link(
+            dbc.NavLink(
                 [
                     html.Img(src=icon_encoded, width=30, height=30, className="d-inline-block align-top mr-2"), # Logo image
-                    "Leasing - Valeur Résiduelle"
+                    html.Span("Leasing - Valeur Résiduelle")
                 ],
                 href="/",  # Link to Home page
                 className="navbar-brand"
